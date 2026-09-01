@@ -1,0 +1,274 @@
+ {
+  "amaltaro_SC_ProdPsi_15x_Oct2025_Val_260415_055340_7286": {
+    "_id": "amaltaro_SC_ProdPsi_15x_Oct2025_Val_260415_055340_7286",
+    "AcquisitionEra": {
+      "Digi_2021noPU": "CMSSW_15_0_0",
+      "GenSimFull": "CMSSW_15_0_0_pre3",
+      "Reco_2021noPU": "CMSSW_15_0_0_pre3"
+    },
+    "CMSSWVersion": "CMSSW_15_0_0_pre3",
+    "Campaign": "Oct2025_Val",
+    "Comments": {
+      "CheckList": [
+        "StepChain MC from scratch; StepChain MC extension; StepChain with transient Step2 GEN-SIM-DIGI-RAW output;  ",
+        "StepChain MC harvesting; Automatic EventBased splitting; StepChain Disk and Tape rules "
+      ],
+      "WorkFlowDesc": [
+        "SC MC from scratch; EventBased splitting with 1100EpJ; FirstLumi=101; Rucio container rule for Disk"
+      ]
+    },
+    "ConfigCacheUrl": "https://cmsweb.cern.ch/couchdb",
+    "CouchDBName": "reqmgr_config_cache",
+    "DQMConfigCacheID": "527f598f9168f0145d17417be5841ef4",
+    "DQMHarvestUnit": "byRun",
+    "DQMUploadUrl": "https://cmsweb.cern.ch/dqm/dev",
+    "DbsUrl": "https://cmsweb-testbed.cern.ch/dbs/int/global/DBSReader",
+    "EnableHarvesting": true,
+    "EventStreams": 0,
+    "FirstEvent": 10001,
+    "FirstLumi": 101,
+    "GlobalTag": "120X_mcRun3_2021_realistic_v4",
+    "IncludeParents": false,
+    "Memory": 8000,
+    "Multicore": 1,
+    "PrepID": "TEST-CMSSW_12_0_0__PDMVRELVALS-128_2021noPU-Psi2SToJPsiPiPi-00001",
+    "ProcessingString": {
+      "Digi_2021noPU": "Digi_2021noPU_SC_ProdPsi_15x_Oct2025_Val_Alanv7",
+      "GenSimFull": "GenSimFull_SC_ProdPsi_15x_Oct2025_Val_Alanv7",
+      "Reco_2021noPU": "Reco_2021noPU_SC_ProdPsi_15x_Oct2025_Val_Alanv7"
+    },
+    "ProcessingVersion": 11,
+    "RequestPriority": 600000,
+    "RequestString": "SC_ProdPsi_15x_Oct2025_Val",
+    "RequestType": "StepChain",
+    "ScramArch": [
+      "slc7_amd64_gcc900"
+    ],
+    "SizePerEvent": 1,
+    "SubRequestType": "RelVal",
+    "Step1": {
+      "AcquisitionEra": "CMSSW_15_0_0_pre3",
+      "CMSSWVersion": "CMSSW_15_0_0_pre3",
+      "Campaign": "RelVal_Generic_Campaign",
+      "ConfigCacheID": "527f598f9168f0145d17417be583c7ef",
+      "EventStreams": 2,
+      "EventsPerLumi": 100,
+      "GlobalTag": "120X_mcRun3_2021_realistic_v4",
+      "KeepOutput": true,
+      "Multicore": 8,
+      "PrimaryDataset": "RelValPsi2SToJPsiPiPi",
+      "ProcessingString": "GenSimFull_SC_ProdPsi_15x_Oct2025_Val_Alanv7",
+      "RequestNumEvents": 10000,
+      "ScramArch": [
+        "slc7_amd64_gcc900"
+      ],
+      "Seeding": "AutomaticSeeding",
+      "SplittingAlgo": "EventBased",
+      "StepName": "GenSimFull",
+      "EventsPerJob": 1100
+    },
+    "Step2": {
+      "AcquisitionEra": "CMSSW_15_0_0",
+      "CMSSWVersion": "CMSSW_15_0_0",
+      "Campaign": "RelVal_Generic_Campaign",
+      "ConfigCacheID": "527f598f9168f0145d17417be583db58",
+      "EventStreams": 2,
+      "GlobalTag": "120X_mcRun3_2021_realistic_v4",
+      "KeepOutput": false,
+      "InputFromOutputModule": "FEVTDEBUGoutput",
+      "InputStep": "GenSimFull",
+      "Multicore": 8,
+      "ProcessingString": "Digi_2021noPU_SC_ProdPsi_15x_Oct2025_Val_Alanv7",
+      "ScramArch": [
+        "slc7_amd64_gcc900"
+      ],
+      "SplittingAlgo": "EventAwareLumiBased",
+      "StepName": "Digi_2021noPU"
+    },
+    "Step3": {
+      "AcquisitionEra": "CMSSW_15_0_0_pre3",
+      "CMSSWVersion": "CMSSW_15_0_0_pre3",
+      "Campaign": "RelVal_Generic_Campaign",
+      "ConfigCacheID": "527f598f9168f0145d17417be584029f",
+      "EventStreams": 2,
+      "GlobalTag": "120X_mcRun3_2021_realistic_v4",
+      "InputFromOutputModule": "FEVTDEBUGHLToutput",
+      "InputStep": "Digi_2021noPU",
+      "Multicore": 8,
+      "ProcessingString": "Reco_2021noPU_SC_ProdPsi_15x_Oct2025_Val_Alanv7",
+      "ScramArch": [
+        "slc7_amd64_gcc900"
+      ],
+      "SplittingAlgo": "EventAwareLumiBased",
+      "StepName": "Reco_2021noPU"
+    },
+    "StepChain": 3,
+    "TimePerEvent": 40,
+    "Requestor": "amaltaro",
+    "RequestorDN": "/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=amaltaro/CN=718748/CN=Alan Malta Rodrigues",
+    "RequestStatus": "completed",
+    "RequestTransition": [
+      {
+        "Status": "new",
+        "UpdateTime": 1776232420,
+        "DN": "/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=amaltaro/CN=718748/CN=Alan Malta Rodrigues"
+      },
+      {
+        "UpdateTime": 1776232422,
+        "DN": "/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=amaltaro/CN=718748/CN=Alan Malta Rodrigues",
+        "Status": "assignment-approved"
+      },
+      {
+        "UpdateTime": 1776232422,
+        "DN": "/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=amaltaro/CN=718748/CN=Alan Malta Rodrigues",
+        "Status": "assigned"
+      },
+      {
+        "UpdateTime": 1776232578,
+        "DN": "/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=msunmer/CN=852819/CN=Robot: WmCore Service Account",
+        "Status": "staging"
+      },
+      {
+        "UpdateTime": 1776233729,
+        "DN": "/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=msunmer/CN=852819/CN=Robot: WmCore Service Account",
+        "Status": "staged"
+      },
+      {
+        "UpdateTime": 1776234138,
+        "DN": "/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=msunmer/CN=852819/CN=Robot: WmCore Service Account",
+        "Status": "acquired"
+      },
+      {
+        "UpdateTime": 1776234739,
+        "DN": "/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=msunmer/CN=852819/CN=Robot: WmCore Service Account",
+        "Status": "running-open"
+      },
+      {
+        "UpdateTime": 1776234739,
+        "DN": "/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=msunmer/CN=852819/CN=Robot: WmCore Service Account",
+        "Status": "running-closed"
+      },
+      {
+        "UpdateTime": 1776235940,
+        "DN": "/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=msunmer/CN=852819/CN=Robot: WmCore Service Account",
+        "Status": "completed"
+      }
+    ],
+    "RequestDate": [
+      2026,
+      4,
+      15,
+      5,
+      53,
+      40
+    ],
+    "PriorityTransition": [
+      {
+        "Priority": 600000,
+        "UpdateTime": 1776232420,
+        "DN": "/DC=ch/DC=cern/OU=Organic Units/OU=Users/CN=amaltaro/CN=718748/CN=Alan Malta Rodrigues"
+      }
+    ],
+    "CouchURL": "https://cmsweb-testbed.cern.ch/couchdb",
+    "CouchWorkloadDBName": "reqmgr_workload_cache",
+    "RequestName": "amaltaro_SC_ProdPsi_15x_Oct2025_Val_260415_055340_7286",
+    "ConfigCacheID": null,
+    "Group": "DATAOPS",
+    "OpenRunningTimeout": 0,
+    "GlobalTagConnect": null,
+    "LumiList": {},
+    "DashboardHost": "cms-jobmon.cern.ch",
+    "DashboardPort": 8884,
+    "PeriodicHarvestInterval": 0,
+    "DQMUploadProxy": null,
+    "DQMSequences": [],
+    "EnableNewStageout": false,
+    "VoGroup": "unknown",
+    "VoRole": "unknown",
+    "ValidStatus": "PRODUCTION",
+    "OverrideCatalog": null,
+    "RunNumber": 0,
+    "RobustMerge": true,
+    "RequiresGPU": null,
+    "GPUParams": "null",
+    "JobExtraMatchRequirements": "",
+    "MinMergeSize": 2147483648,
+    "MaxMergeSize": 4294967296,
+    "MaxWaitTime": 86400,
+    "MaxMergeEvents": 100000000,
+    "HarvestingMemory": 3000,
+    "MergedLFNBase": "/store/backfill/1",
+    "UnmergedLFNBase": "/store/unmerged",
+    "DeleteFromSource": false,
+    "DeterministicPileup": false,
+    "PrimaryDataset": null,
+    "ChainParentageMap": {
+      "Step1": {
+        "ParentDset": null,
+        "ChildDsets": [
+          "/RelValPsi2SToJPsiPiPi/CMSSW_15_0_0_pre3-GenSimFull_SC_ProdPsi_15x_Oct2025_Val_Alanv7-v11/GEN-SIM"
+        ]
+      },
+      "Step2": {
+        "ParentDset": "/RelValPsi2SToJPsiPiPi/CMSSW_15_0_0_pre3-GenSimFull_SC_ProdPsi_15x_Oct2025_Val_Alanv7-v11/GEN-SIM",
+        "ChildDsets": []
+      },
+      "Step3": {
+        "ParentDset": "/RelValPsi2SToJPsiPiPi/CMSSW_15_0_0_pre3-GenSimFull_SC_ProdPsi_15x_Oct2025_Val_Alanv7-v11/GEN-SIM",
+        "ChildDsets": [
+          "/RelValPsi2SToJPsiPiPi/CMSSW_15_0_0_pre3-Reco_2021noPU_SC_ProdPsi_15x_Oct2025_Val_Alanv7-v11/DQMIO",
+          "/RelValPsi2SToJPsiPiPi/CMSSW_15_0_0_pre3-Reco_2021noPU_SC_ProdPsi_15x_Oct2025_Val_Alanv7-v11/MINIAODSIM",
+          "/RelValPsi2SToJPsiPiPi/CMSSW_15_0_0_pre3-Reco_2021noPU_SC_ProdPsi_15x_Oct2025_Val_Alanv7-v11/GEN-SIM-RECO"
+        ]
+      }
+    },
+    "ParentageResolved": false,
+    "RequestWorkflow": "https://cmsweb-testbed.cern.ch/couchdb/reqmgr_workload_cache/amaltaro_SC_ProdPsi_15x_Oct2025_Val_260415_055340_7286/spec",
+    "OutputDatasets": [
+      "/RelValPsi2SToJPsiPiPi/CMSSW_15_0_0_pre3-GenSimFull_SC_ProdPsi_15x_Oct2025_Val_Alanv7-v11/GEN-SIM",
+      "/RelValPsi2SToJPsiPiPi/CMSSW_15_0_0_pre3-Reco_2021noPU_SC_ProdPsi_15x_Oct2025_Val_Alanv7-v11/DQMIO",
+      "/RelValPsi2SToJPsiPiPi/CMSSW_15_0_0_pre3-Reco_2021noPU_SC_ProdPsi_15x_Oct2025_Val_Alanv7-v11/MINIAODSIM",
+      "/RelValPsi2SToJPsiPiPi/CMSSW_15_0_0_pre3-Reco_2021noPU_SC_ProdPsi_15x_Oct2025_Val_Alanv7-v11/GEN-SIM-RECO"
+    ],
+    "InitialPriority": 600000,
+    "Dashboard": "integration",
+    "GracePeriod": 300,
+    "Override": {
+      "eos-lfn-prefix": "root://eoscms.cern.ch//eos/cms/store/logs/prod/recent/TESTBED"
+    },
+    "CustodialSites": [
+      "T1_US_FNAL_MSS"
+    ],
+    "NonCustodialSites": [
+      "T1_US_FNAL_Disk"
+    ],
+    "SiteBlacklist": [],
+    "SiteWhitelist": [
+      "T1_US_FNAL",
+      "T2_CH_CERN"
+    ],
+    "SoftTimeout": 129600,
+    "Team": "testbed-vocms0193",
+    "HardTimeout": 129900,
+    "SubscriptionPriority": "Low",
+    "TrustSitelists": false,
+    "TrustPUSitelists": false,
+    "AllowOpportunistic": false,
+    "BlockCloseMaxWaitTime": 66400,
+    "BlockCloseMaxFiles": 500,
+    "BlockCloseMaxEvents": 25000000,
+    "BlockCloseMaxSize": 5000000000000,
+    "DatasetLifetime": 0,
+    "OutputModulesLFNBases": [
+      "/store/unmerged/CMSSW_15_0_0_pre3/RelValPsi2SToJPsiPiPi/MINIAODSIM/Reco_2021noPU_SC_ProdPsi_15x_Oct2025_Val_Alanv7-v11",
+      "/store/unmerged/CMSSW_15_0_0_pre3/RelValPsi2SToJPsiPiPi/DQMIO/Reco_2021noPU_SC_ProdPsi_15x_Oct2025_Val_Alanv7-v11",
+      "/store/unmerged/CMSSW_15_0_0_pre3/RelValPsi2SToJPsiPiPi/GEN-SIM/GenSimFull_SC_ProdPsi_15x_Oct2025_Val_Alanv7-v11",
+      "/store/unmerged/CMSSW_15_0_0_pre3/RelValPsi2SToJPsiPiPi/GEN-SIM-RECO/Reco_2021noPU_SC_ProdPsi_15x_Oct2025_Val_Alanv7-v11",
+      "/store/unmerged/CMSSW_15_0_0/RelValPsi2SToJPsiPiPi/GEN-SIM-DIGI-RAW/Digi_2021noPU_SC_ProdPsi_15x_Oct2025_Val_Alanv7-v11"
+    ],
+    "TotalEstimatedJobs": 10,
+    "TotalInputEvents": 10000,
+    "TotalInputLumis": 100,
+    "TotalInputFiles": 0
+  }
+}
