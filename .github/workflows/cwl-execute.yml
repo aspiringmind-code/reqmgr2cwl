@@ -1,0 +1,83 @@
+name: reqmgr2-to-cwl
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch: {}
+
+jobs:
+  # -----------------------------------------------------------------
+  # CWL validation + mocked wiring test (tests/run_tests.sh). Runs on a
+  # normal GitHub-hosted runner -- no CVMFS, no real artifacts needed.
+  # Proves the CWL/discovery code is correct and workflow-agnostic using
+  # a self-contained synthetic fixture (see tests/run_tests.py).
+  # -----------------------------------------------------------------
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install cwltool
+        run: pip install cwltool
+
+      - name: Validate CWL + run mocked wiring test
+        run: bash tests/run_tests.sh
+
+  # -----------------------------------------------------------------
+  # Real execution against whatever is under artifacts/: JobPackage.pkl,
+  # a Job_<id>_tar.bz2, a <workflow>-Sandbox_tar.bz2, and a ReqMgr2
+  # request .json. scripts/discover_job.py figures out everything else
+  # (job index, workflow name, step name, splitting algo, worker OS,
+  # etc.) -- nothing here is specific to any one workflow.
+  #
+  # Requires a self-hosted runner labeled [self-hosted, cvmfs, cmssw]
+  # on a host with:
+  #   - /cvmfs/cms.cern.ch mounted
+  #   - apptainer/singularity + the cmssw-elN wrapper(s) available
+  #   - a valid grid proxy if the job needs to read/write beyond local
+  #     disk (not required when the input is an MCFakeFile)
+  #
+  # lxplus itself is a reasonable choice: register it (or an lxplus-like
+  # CVMFS-mounted node) as a GitHub Actions self-hosted runner with
+  # these labels. Mirrors how lhcb-cwl-example runs its real test tier
+  # on a `cvmfs`-tagged runner with LbEnv sourced.
+  # -----------------------------------------------------------------
+  execute:
+    needs: validate
+    runs-on: [self-hosted, cvmfs, cmssw]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Sanity-check execution environment
+        run: |
+          set -e
+          ls /cvmfs/cms.cern.ch > /dev/null
+          command -v cwltool || pip install --user cwltool
+
+      - name: Confirm artifacts are present
+        run: |
+          set -e
+          if [ -z "$(ls -A artifacts 2>/dev/null | grep -v '^\.generated$')" ]; then
+            echo "ERROR: artifacts/ is empty. Place JobPackage.pkl, a"
+            echo "       Job_<id>_tar.bz2, a <workflow>-Sandbox_tar.bz2,"
+            echo "       and the ReqMgr2 request .json there before running."
+            exit 1
+          fi
+          ls -la artifacts
+
+      - name: Run (discover + validate + execute)
+        run: bash run.sh
+
+      - name: Upload job output as an artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cwl-job-output
+          path: results/
+          retention-days: 14
