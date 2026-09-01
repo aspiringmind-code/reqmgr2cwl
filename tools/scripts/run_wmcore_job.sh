@@ -74,7 +74,7 @@ chmod +x "${INNER_SCRIPT}"
 # typically the current working directory) by default. If your site's
 # wrapper doesn't, override CMSSW_CONTAINER to include the right flags
 # for your local apptainer/singularity setup.
-"${CMSSW_CONTAINER}" bash "${INNER_SCRIPT}"
+"${CMSSW_CONTAINER}" -- bash "${INNER_SCRIPT}"
 
 echo "== Collecting job report(s) =="
 find "${WORKDIR}/job" -name 'Report*.pkl' -exec cp {} "${OUTDIR}/" \; || true
