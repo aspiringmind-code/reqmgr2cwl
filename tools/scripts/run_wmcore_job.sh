@@ -66,6 +66,11 @@ if [ -f "${CVMFS_PY3FUTURE_INIT}" ]; then source "${CVMFS_PY3FUTURE_INIT}"; fi
 export WMAGENTJOBDIR="\${PWD}"
 export PYTHONPATH="\${PWD}/WMCore.zip:\${PWD}:\${PYTHONPATH:-}"
 
+if ! python3 -c "import future" 2>/dev/null; then
+    echo "'future' not importable via CVMFS init -- installing with pip instead"
+    python3 -m pip install --user future || echo "WARNING: pip install future failed"
+fi
+
 python3 Startup.py
 INNEREOF
 chmod +x "${INNER_SCRIPT}"
