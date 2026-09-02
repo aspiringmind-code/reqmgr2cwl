@@ -50,7 +50,7 @@ inputs:
     default: 2000
   cmssw_container:
     type: string
-    default: "cmssw-el7"
+    default: "cmssw-el8"
 
   # Metadata, purely descriptive at this level (carried into the
   # wmcore:Transformation hint above) but also passed functionally down
@@ -90,6 +90,7 @@ steps:
       memory_mb: memory_mb
       cmssw_container: cmssw_container
       scram_arch: scram_arch
+      cmssw_version: cmssw_version
     out: [job_output, job_dir]
 
 $namespaces:

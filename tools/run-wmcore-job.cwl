@@ -30,6 +30,7 @@ requirements:
       UNPACKER: $(inputs.unpacker_script.basename)
       CMSSW_CONTAINER: $(inputs.cmssw_container)
       CMSSW_SCRAM_ARCH: $(inputs.scram_arch)
+      CMSSW_VERSION: $(inputs.cmssw_version)
 
 hints:
   ResourceRequirement:
@@ -76,6 +77,9 @@ inputs:
     type: string
     default: "slc7_amd64_gcc900"
     doc: "ScramArch for this step; used to pick the right CVMFS COMP init.sh paths"
+  cmssw_version:
+    type: string
+    doc: "CMSSW release for this step; used to scram-project + cmsenv before Startup.py runs"
 
 outputs:
   job_output:

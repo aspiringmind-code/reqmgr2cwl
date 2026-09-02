@@ -19,6 +19,7 @@ set -euo pipefail
 : "${JOBPACKAGE:?JOBPACKAGE (JobPackage.pkl path) must be set}"
 : "${JOB_INDEX:?JOB_INDEX must be set}"
 : "${UNPACKER:?UNPACKER (Unpacker.py path) must be set}"
+: "${CMSSW_VERSION:?CMSSW_VERSION must be set}"
 
 CMSSW_CONTAINER="${CMSSW_CONTAINER:-cmssw-el7}"
 WORKDIR="$(pwd)"
@@ -65,7 +66,16 @@ if [ -f "${CVMFS_PY3FUTURE_INIT}" ]; then source "${CVMFS_PY3FUTURE_INIT}"; fi
 
 export WMAGENTJOBDIR="\${PWD}"
 export PYTHONPATH="\${PWD}/WMCore.zip:\${PWD}:\${PYTHONPATH:-}"
-
+echo "== Setting up CMSSW runtime: \${CMSSW_VERSION} (\${CMSSW_SCRAM_ARCH:-default arch}) =="
+source /cvmfs/cms.cern.ch/cmsset_default.sh
+if [ -n "\${CMSSW_SCRAM_ARCH:-}" ]; then export SCRAM_ARCH="\${CMSSW_SCRAM_ARCH}"; fi
+if [ ! -d "\${CMSSW_VERSION}" ]; then
+    scram project CMSSW "\${CMSSW_VERSION}"
+fi
+pushd "\${CMSSW_VERSION}/src" > /dev/null
+eval \$(scramv1 runtime -sh)
+popd > /dev/null
+cd "${WORKDIR}/job"
 if ! python3 -c "import future" 2>/dev/null; then
     echo "'future' not importable via CVMFS init -- installing with pip instead"
     python3 -m pip install --user future || echo "WARNING: pip install future failed"

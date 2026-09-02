@@ -56,6 +56,29 @@ WORKER_OS_TO_CONTAINER = {
     "alma9": "cmssw-el9",
 }
 
+def container_for_scram_arch(scram_arch):
+    """Pick the cmssw-elN container from the ScramArch string itself.
+
+    This is the RIGHT signal, not the job's recorded worker_os: worker_os
+    describes the physical grid execute node's OS, which can (and did, in
+    practice) differ from what a given CMSSW release actually needs.
+    ScramArch directly encodes the OS family the release was built for
+    (slc7_*, el8_*, el9_*, ...), so deriving the container from it avoids
+    that mismatch entirely.
+    """
+    if not scram_arch:
+        return None
+    sa = scram_arch.lower()
+    if sa.startswith("slc6") or sa.startswith("rhel6") or sa.startswith("el6"):
+        return "cmssw-el6"
+    if sa.startswith("slc7") or sa.startswith("rhel7") or sa.startswith("el7"):
+        return "cmssw-el7"
+    if sa.startswith("el8") or sa.startswith("rhel8"):
+        return "cmssw-el8"
+    if sa.startswith("el9") or sa.startswith("rhel9"):
+        return "cmssw-el9"
+    return None
+
 STEP_KEY_RE = re.compile(r"^(Step|Task)(\d+)$")
 
 
@@ -95,19 +118,52 @@ def parse_job_instance(wmagent_log_path):
     with open(wmagent_log_path, "r", errors="replace") as f:
         text = f.read()
 
-    m = re.search(r"Job Instance = (\{.*\})\s*$", text, re.MULTILINE)
-    if not m:
-        die(f"Could not find a 'Job Instance = {{...}}' line in {wmagent_log_path}")
-    dict_str = m.group(1)
+    dict_str = extract_balanced_braces(text, "Job Instance = {")
+    if dict_str is None:
+        die(f"Could not find a 'Job Instance = {{...}}' entry in {wmagent_log_path}")
 
-    # The dict is a Python repr containing set() calls, which
-    # ast.literal_eval can't parse (they're not literals). Evaluate with a
-    # tightly restricted namespace instead -- this file is the person's own
-    # extracted job log, not untrusted network input.
-    try:
-        job_instance = eval(dict_str, {"__builtins__": {}, "set": set})
-    except Exception as e:
-        die(f"Failed to parse Job Instance dict from {wmagent_log_path}: {e}")
+    # Deliberately NOT eval-ing the whole dict. It can contain fields
+    # whose printed repr isn't valid Python at all -- e.g. a non-empty
+    # 'runs' set prints its WMCore.DataStructs.Run.Run elements as
+    # '<WMCore.DataStructs.Run.Run object at 0x...>', which is a live
+    # object's default repr, not reconstructible literal syntax.
+    #
+    # We only ever need six scalar top-level fields, none of which sit
+    # inside the problematic input_files/runs structures, so pull just
+    # those out directly with targeted regexes instead.
+    job_instance = {}
+
+    m = re.search(r"'id':\s*(\d+)", dict_str)
+    if m:
+        job_instance["id"] = int(m.group(1))
+
+    m = re.search(r"'workflow':\s*'((?:[^'\\]|\\.)*)'", dict_str)
+    if m:
+        job_instance["workflow"] = m.group(1)
+
+    m = re.search(r"'task':\s*'((?:[^'\\]|\\.)*)'", dict_str)
+    if m:
+        job_instance["task"] = m.group(1)
+
+    m = re.search(r"'requestType':\s*'((?:[^'\\]|\\.)*)'", dict_str)
+    if m:
+        job_instance["requestType"] = m.group(1)
+
+    m = re.search(r"'numberOfCores':\s*(\d+)", dict_str)
+    if m:
+        job_instance["numberOfCores"] = int(m.group(1))
+
+    m = re.search(r"'estimatedMemoryUsage':\s*([\d.]+)", dict_str)
+    if m:
+        job_instance["estimatedMemoryUsage"] = float(m.group(1))
+
+    missing = [k for k in ("id", "workflow", "task") if k not in job_instance]
+    if missing:
+        die(
+            f"Could not extract required field(s) {missing} from the Job "
+            f"Instance dict in {wmagent_log_path}.\n"
+            f"First 300 chars extracted:\n{dict_str[:300]}"
+        )
 
     worker_os = None
     m2 = re.search(r'"worker_os":\s*"([^"]+)"', text)
@@ -115,6 +171,41 @@ def parse_job_instance(wmagent_log_path):
         worker_os = m2.group(1)
 
     return job_instance, worker_os
+
+
+def extract_balanced_braces(text, marker):
+    """Find `marker` (ending in '{') and return the full balanced {...}
+    expression that follows, regardless of line wrapping. More robust
+    than a single-line regex: correctly skips braces that appear inside
+    quoted strings (LFNs, paths) instead of treating them as structural."""
+    start_marker = text.find(marker)
+    if start_marker == -1:
+        return None
+    start = start_marker + len(marker) - 1
+
+    depth = 0
+    in_string = None
+    i = start
+    n = len(text)
+    while i < n:
+        ch = text[i]
+        if in_string:
+            if ch == "\\":
+                i += 2
+                continue
+            if ch == in_string:
+                in_string = None
+        else:
+            if ch in ("'", '"'):
+                in_string = ch
+            elif ch == "{":
+                depth += 1
+            elif ch == "}":
+                depth -= 1
+                if depth == 0:
+                    return text[start:i + 1]
+        i += 1
+    return None
 
 
 def extract_unpacker(sandbox_tar_path, work_dir):
@@ -209,11 +300,18 @@ def main():
     ap.add_argument("--work-dir", default=None, help="default: <artifacts-dir>/.generated")
     ap.add_argument("--output", default=None, help="default: <work-dir>/inputs.yml")
     ap.add_argument("--run-script", default="tools/scripts/run_wmcore_job.sh")
+    ap.add_argument("--container-override", default=None, help="Force the container (e.g. cmssw-el9) instead of deriving it from the job's recorded worker_os.")
     args = ap.parse_args()
 
     artifacts_dir = os.path.abspath(args.artifacts_dir)
     work_dir = os.path.abspath(args.work_dir or os.path.join(artifacts_dir, ".generated"))
     output_path = os.path.abspath(args.output or os.path.join(work_dir, "inputs.yml"))
+    # Wipe any previous scratch content before extracting -- job_tar_extracted/
+    # and sandbox_extracted/ are fixed paths reused every run, so leftovers
+    # from a previous (different) job/workflow can silently get picked up
+    # by glob.glob() instead of the new artifact.
+    if os.path.isdir(work_dir):
+        shutil.rmtree(work_dir)
     os.makedirs(work_dir, exist_ok=True)
 
     print(f"== Discovering artifacts under {artifacts_dir} ==")
@@ -294,7 +392,36 @@ def main():
     site_whitelist = request.get("SiteWhitelist", [])
     output_datasets = request.get("OutputDatasets", [])
 
-    container = WORKER_OS_TO_CONTAINER.get((worker_os or "").lower(), "cmssw-el7")
+    container_from_scram_arch = container_for_scram_arch(scram_arch)
+    container_from_worker_os = WORKER_OS_TO_CONTAINER.get((worker_os or "").lower())
+
+    if args.container_override:
+        container = args.container_override
+        print(f"  NOTE: container FORCED to '{container}' via --container-override")
+    elif container_from_scram_arch:
+        container = container_from_scram_arch
+        if container_from_worker_os and container_from_worker_os != container:
+            print(
+                f"  NOTE: container '{container}' chosen from ScramArch "
+                f"'{scram_arch}'. This differs from what the job's recorded "
+                f"worker_os ('{worker_os}') would suggest "
+                f"('{container_from_worker_os}') -- using ScramArch, since "
+                f"that's what the CMSSW release actually needs to match."
+            )
+    elif container_from_worker_os:
+        container = container_from_worker_os
+        print(
+            f"  NOTE: could not derive a container from ScramArch "
+            f"('{scram_arch}'); falling back to worker_os ('{worker_os}') "
+            f"-> '{container}'."
+        )
+    else:
+        container = "cmssw-el8"
+        print(
+            f"  NOTE: could not derive a container from ScramArch "
+            f"('{scram_arch}') or worker_os ('{worker_os}'); defaulting "
+            f"to '{container}'. Consider --container-override if this is wrong."
+        )
 
     print("== Resolved step/request metadata ==")
     for k, v in {
