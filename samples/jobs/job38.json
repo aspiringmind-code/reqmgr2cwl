@@ -1,0 +1,63 @@
+{
+  "job_index": 38,
+  "tweaks": {
+    "1": {
+      "process.options.numberOfThreads": "customTypeCms.untracked.uint32(4)",
+      "process.options.numberOfStreams": "customTypeCms.untracked.uint32(0)",
+      "process.source.firstLuminosityBlock": "customTypeCms.untracked.uint32(38)",
+      "process.maxEvents": "customTypeCms.untracked.PSet(input=cms.untracked.int32(830))",
+      "process.source.firstEvent": "customTypeCms.untracked.uint32(30711)",
+      "process.source.firstRun": "customTypeCms.untracked.uint32(1)",
+      "process.RAWSIMoutput.fileName": "customTypeCms.untracked.string('file:RAWSIMoutput.root')"
+    },
+    "2": {
+      "process.options.numberOfThreads": "customTypeCms.untracked.uint32(4)",
+      "process.options.numberOfStreams": "customTypeCms.untracked.uint32(0)",
+      "process.source.firstLuminosityBlock": "customTypeCms.untracked.uint32(38)",
+      "process.maxEvents": "customTypeCms.untracked.PSet(input=cms.untracked.int32(-1))",
+      "process.source.firstEvent": "customTypeCms.untracked.uint32(30711)",
+      "process.source.firstRun": "customTypeCms.untracked.uint32(1)",
+      "process.source.fileNames": "customTypeCms.untracked.vstring(['file:../step1/RAWSIMoutput.root'])",
+      "process.RAWSIMoutput.fileName": "customTypeCms.untracked.string('file:RAWSIMoutput.root')"
+    },
+    "3": {
+      "process.options.numberOfThreads": "customTypeCms.untracked.uint32(4)",
+      "process.options.numberOfStreams": "customTypeCms.untracked.uint32(0)",
+      "process.source.firstLuminosityBlock": "customTypeCms.untracked.uint32(38)",
+      "process.maxEvents": "customTypeCms.untracked.PSet(input=cms.untracked.int32(-1))",
+      "process.source.firstEvent": "customTypeCms.untracked.uint32(30711)",
+      "process.source.firstRun": "customTypeCms.untracked.uint32(1)",
+      "process.source.fileNames": "customTypeCms.untracked.vstring(['file:../step2/RAWSIMoutput.root'])",
+      "process.RAWSIMoutput.fileName": "customTypeCms.untracked.string('file:RAWSIMoutput.root')"
+    },
+    "4": {
+      "process.options.numberOfThreads": "customTypeCms.untracked.uint32(4)",
+      "process.options.numberOfStreams": "customTypeCms.untracked.uint32(0)",
+      "process.source.firstLuminosityBlock": "customTypeCms.untracked.uint32(38)",
+      "process.maxEvents": "customTypeCms.untracked.PSet(input=cms.untracked.int32(-1))",
+      "process.source.firstEvent": "customTypeCms.untracked.uint32(30711)",
+      "process.source.firstRun": "customTypeCms.untracked.uint32(1)",
+      "process.source.fileNames": "customTypeCms.untracked.vstring(['file:../step3/RAWSIMoutput.root'])",
+      "process.AODSIMoutput.fileName": "customTypeCms.untracked.string('file:AODSIMoutput.root')"
+    },
+    "5": {
+      "process.options.numberOfThreads": "customTypeCms.untracked.uint32(4)",
+      "process.options.numberOfStreams": "customTypeCms.untracked.uint32(0)",
+      "process.source.firstLuminosityBlock": "customTypeCms.untracked.uint32(38)",
+      "process.maxEvents": "customTypeCms.untracked.PSet(input=cms.untracked.int32(-1))",
+      "process.source.firstEvent": "customTypeCms.untracked.uint32(30711)",
+      "process.source.firstRun": "customTypeCms.untracked.uint32(1)",
+      "process.source.fileNames": "customTypeCms.untracked.vstring(['file:../step4/AODSIMoutput.root'])",
+      "process.MINIAODSIMoutput.fileName": "customTypeCms.untracked.string('file:MINIAODSIMoutput.root')"
+    },
+    "6": {
+      "process.options.numberOfThreads": "customTypeCms.untracked.uint32(4)",
+      "process.options.numberOfStreams": "customTypeCms.untracked.uint32(0)",
+      "process.source.firstLuminosityBlock": "customTypeCms.untracked.uint32(38)",
+      "process.maxEvents": "customTypeCms.untracked.PSet(input=cms.untracked.int32(-1))",
+      "process.source.firstEvent": "customTypeCms.untracked.uint32(30711)",
+      "process.source.firstRun": "customTypeCms.untracked.uint32(1)",
+      "process.source.fileNames": "customTypeCms.untracked.vstring(['file:../step5/MINIAODSIMoutput.root'])"
+    }
+  }
+}
