@@ -1,0 +1,46 @@
+#!/usr/bin/env python3
+"""
+Mock cmsRun: each output module writes a JSON '.root' file recording the
+PSet, release, tweak and the content of the input file, so a test can follow
+the chain from the last step back to the first.
+Set MOCK_CMSRUN_FJR_ERROR=<code> to write a failed job report and still exit 0.
+"""
+import json
+import os
+import re
+import sys
+
+args = sys.argv[1:]
+if args[:1] != ["-j"] or len(args) != 3:
+    sys.exit("mock cmsRun: expected -j <report> <config>")
+report, config = args[1], args[2]
+with open(config) as f:
+    if "pickle.load" not in f.read():
+        sys.exit("mock cmsRun: config does not load the pickled PSet")
+with open("Pset.pkl") as f:
+    pkl = json.load(f)
+if pkl["cmssw_version"] != os.environ["CMSSW_VERSION"]:
+    sys.exit("mock cmsRun: PSet pickled with %s, running %s" % (pkl["cmssw_version"], os.environ["CMSSW_VERSION"]))
+
+tweak = pkl["tweak"]
+source = None
+if "process.source.fileNames" in tweak:
+    name = re.search(r"\['file:([^']+)'\]", tweak["process.source.fileNames"]).group(1)
+    with open(name) as f:
+        source = json.load(f)
+for module in pkl["output_modules"]:
+    key = "process.%s.fileName" % module
+    name = re.search(r"'file:([^']+)'", tweak[key]).group(1) if key in tweak else "%s_default.root" % module
+    with open(name, "w") as f:
+        json.dump({"module": module, "pset_md5": pkl["pset_md5"], "cmssw_version": os.environ["CMSSW_VERSION"],
+                   "nevents_handled": pkl.get("nevents_handled", False),
+                   "condor_status_name": pkl.get("condor_status_name"),
+                   "input": source}, f)
+
+error = os.environ.get("MOCK_CMSRUN_FJR_ERROR")
+with open(report, "w") as f:
+    if error:
+        f.write('<FrameworkJobReport><FrameworkError ExitStatus="%s" Type="Mock"/></FrameworkJobReport>\n' % error)
+    else:
+        f.write('<FrameworkJobReport Status="Success"></FrameworkJobReport>\n')
+print("mock cmsRun done")
