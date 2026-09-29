@@ -1,2 +1,0 @@
-# Tools to run and test the CWL workflow (see cwl/README.md); node is also needed.
-cwltool>=3.1
