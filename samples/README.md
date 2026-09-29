@@ -1,7 +1,8 @@
 # StepChain job in CWL
 
 One job of the 6-step Monte Carlo StepChain in `samples/cmsunified_task_SMP-RunIISummer20UL17pp5TeVwmLHEGS-00007__v1_T_251014_173511_792/`,
-described in [CWL v1.2](https://www.commonwl.org/v1.2/) instead of the bash loop in `ep_scripts/execute_stepchain.sh`.
+described in [CWL v1.2](https://www.commonwl.org/v1.2/) instead of the bash loop in `ep_scripts/execute_stepchain.sh` [Marco's stepchain](https://github.com/mmascher/WorkflowOrchestrator/blob/main/ep_scripts/execute_stepchain.sh).
+The directory is self-contained: `samples/` holds a copy of that request's `request.json`, `splitting.json` and `PSets/`.
 It does not use the WMAgent sandbox or job wrapper: every `cmsRun` is an explicit step.
 
 ## From `execute_stepchain.sh` to CWL
@@ -47,6 +48,7 @@ cwl/
 ├── scripts/
 │   ├── cmssw_env.sh         environment helpers sourced by the tools
 │   └── make_job_inputs.py   jobN.json + request.json -> jobN.yml
+├── samples/                request.json, splitting.json and PSets/ of the request (copy)
 ├── jobs/
 │   ├── job38.json           job 38 as produced by event_splitter.py
 │   ├── job38.yml            CWL inputs for job 38 (830 events)
@@ -54,11 +56,11 @@ cwl/
 └── tests/                   mock CMSSW environment + unittest
 ```
 
-## Making the inputs for a job
+## Making the inputs for a job (Refer to https://github.com/mmascher/WorkflowOrchestrator/blob/main/src/python/job_splitters/README.md )
 
 ```bash
 export PYTHONPATH=<path>/WMCore/src/python      # needed by event_splitter only
-S=samples/cmsunified_task_SMP-RunIISummer20UL17pp5TeVwmLHEGS-00007__v1_T_251014_173511_792
+S=cwl/samples
 src/python/job_splitters/event_splitter.py --request $S/request.json --splitting $S/splitting.json --output-dir /tmp/split
 cwl/scripts/make_job_inputs.py --request $S/request.json --job /tmp/split/job38.json \
     --psets $S/PSets --output cwl/jobs/job38.yml [--max-events 10]
@@ -68,55 +70,113 @@ Every job uses the same CWL; only this file changes. For job 38: lumi 38, 830 ev
 
 ## Running
 
-Requirements: `pip install -r cwl/requirements.txt` (cwltool) and `node` for the JavaScript expressions.
-
 ### On the mock environment (no /cvmfs needed)
 
+Requirements: `pip install -r cwl/requirements.txt` (cwltool) and `node` for the JavaScript expressions.
+
 ```bash
-python -m unittest cwl/tests/test_cwl_workflow.py -v
+cd cwl
+python3 -m unittest tests/test_cwl_workflow.py -v
 ```
 
 This runs the whole 6-step workflow with fake `scram`, cmssw-wm-tools and `cmsRun`
 (`tests/mock/`). They record which PSet, release, tweak and input file each step got, so the test can follow
 the final NANOAODSIM file back through all six steps and compare the tweaks with `jobs/job38.json`.
 It also checks that a failure written only to the job report stops the workflow.
+The files in `tests/mock/bin/` must keep their names and be executable (`chmod +x tests/mock/bin/*`),
+otherwise the real CMS tools on `PATH` are picked up instead.
 
-### With real CMSSW (not yet tried)
+### With real CMSSW on lxplus9
 
-The CMSSW 10_6 / 9_4 releases of this request need an EL7 userland and `/cvmfs`. The tools carry a
-`DockerRequirement` hint for `cmssw/el7:x86_64`; with Apptainer on an EL9 host such as lxplus:
+The CMSSW 10_6 / 9_4 releases of this request need an EL7 userland. `cwltool` runs on the EL9 host and
+starts every step in the `cmssw/el7:x86_64` image with Apptainer (the tools carry a `DockerRequirement`
+hint for it). This recipe ran all six steps of job 38 (10 events) on lxplus9.
+
+**One-time setup**
 
 ```bash
-export APPTAINER_BINDPATH=/cvmfs            # the image does not include /cvmfs
-cwltool --singularity \
-    --preserve-environment X509_USER_PROXY \
-    --outdir /tmp/job38-out \
-    cwl/stepchain_6steps.cwl cwl/jobs/job38_10events.yml
+# cwltool >= 3.3 needs Python >= 3.10; the system python3 on lxplus9 is 3.9
+python3.11 -m venv ~/cwl-venv
+source ~/cwl-venv/bin/activate
+pip install -r requirements.txt
 ```
 
-Step 2 reads pileup over xrootd, so a grid proxy is needed (and the proxy file has to be visible
-inside the container, e.g. put it under a bound directory). Add `report_to_condor: true` to the inputs
-when running inside an HTCondor job.
+A valid Grid user certificate in `~/.globus/` is needed for the proxy (renew it at the CERN CA when it expires).
+
+**Every session**
+
+```bash
+source ~/cwl-venv/bin/activate
+cd <path>/cwl
+
+# Proxy for the pileup read over xrootd in step 2. Keep it OUT of /tmp:
+# cwltool mounts a private directory over /tmp inside the container, which would hide it.
+voms-proxy-init -voms cms -valid 192:00 -out $HOME/.globus/x509up_cwl
+export X509_USER_PROXY=$HOME/.globus/x509up_cwl
+
+# What the container needs from the host: CMS software, grid CA certificates, the proxy.
+export APPTAINER_BINDPATH=/cvmfs,/etc/grid-security,$X509_USER_PROXY
+
+# Keep the ~1 GB image off AFS (the default ~/.apptainer/cache overflows the AFS quota).
+export APPTAINER_CACHEDIR=/tmp/$USER/apptainer-cache
+export CWL_SINGULARITY_CACHE=/tmp/$USER/sif      # or an EOS directory, to reuse it across lxplus nodes
+mkdir -p $APPTAINER_CACHEDIR $CWL_SINGULARITY_CACHE
+
+cwltool --singularity --preserve-environment X509_USER_PROXY \
+    --leave-tmpdir --cachedir /tmp/$USER/cwl-cache \
+    --outdir /tmp/$USER/job38-out \
+    stepchain_6steps.cwl jobs/job38_10events.yml
+```
+
+- The first run downloads the image into `CWL_SINGULARITY_CACHE` (as `cmssw_s_el7:x86___64.sif`); later
+  runs print `Already cached`. Copy that file to EOS and point `CWL_SINGULARITY_CACHE` there to reuse it
+  on any lxplus node.
+- `--cachedir` stores each finished step: a rerun reuses them (`Using cached output`), so a failure in
+  step 5 does not repeat the hours of GEN-SIM in step 1.
+- `--leave-tmpdir` keeps the working directory of a failed step, so its `cmsRunN-stdout.log` /
+  `cmsRunN-stderr.log` can be read. The directory is the one printed in the `[job cmsrun_N] /tmp/...$` line.
+- `--outdir` must be empty or new: cwltool will not overwrite the read-only files of an earlier run
+  (`Permission denied` at the very end). Remove it with `chmod -R u+w <dir> && rm -rf <dir>`.
+- Add `report_to_condor: true` to the job inputs when running inside an HTCondor job.
+
+**Checking the result**
+
+```bash
+ls -la /tmp/$USER/job38-out/
+grep -H "<TotalEvents>" /tmp/$USER/job38-out/cmsRun*-job_report.xml
+```
+
+**Troubleshooting**
+
+| Symptom | Cause |
+|---|---|
+| `slc7 ... on host with operating system 'el9'` warnings, cmsRun fails | ran without `--singularity`: CMSSW 10_6 needs the EL7 image |
+| `disk quota exceeded` while pulling the image | `APPTAINER_CACHEDIR` not set, the image went to AFS |
+| `cmsset_default.sh not found in /cvmfs/cms.cern.ch` | `/cvmfs` missing from `APPTAINER_BINDPATH` |
+| step 2 exits with status 92 (= CMS 8028, `FallbackFileOpenError`) | pileup could not be opened: proxy under `/tmp`, or `/etc/grid-security` not bound |
+| `PermissionError: '/proc/1/stat'` tracebacks | harmless: cwltool's memory monitor on lxplus |
 
 ## Status
 
-Verified here: `cwltool --validate`, and a full run on the mock environment (chaining, per-step
-releases, tweaks identical to the splitter's apart from file wiring, failure handling).
+Verified:
 
-Not verified yet, to check on the first real run:
-
-1. The container route above (image name, `/cvmfs` bind, proxy visibility).
-2. `scram build ProjectRename` + `scram runtime -sh` on a project area staged by the CWL runner.
-3. The cmssw-wm-tools on the 9_4_14 release (execute_stepchain.sh already runs them there).
+- `cwltool --validate`, and the full run on the mock environment (chaining, per-step releases, tweaks
+  identical to the splitter's apart from file wiring, failure handling).
+- **A real run of job 38 on lxplus9** (10 events, recipe above): all six steps completed, including the
+  pileup read in step 2 and the switch to `CMSSW_9_4_14_UL_patch1` in step 3. `scram project`, staging
+  the project area between CWL steps (`ProjectRename` + `scram runtime`) and the cmssw-wm-tools all
+  work on both releases.
 
 Known gaps / next steps:
 
-- **Exit codes:** process exit codes are 8 bits, so CMS codes such as 8001, 10040 or 50116 arrive
-  truncated (8001 → 65). This is also true of `execute_stepchain.sh`. The real code is in the step's
+- **Compare with `execute_stepchain.sh`:** run it on the same job and compare job reports and event counts.
+- **Exit codes:** process exit codes are 8 bits, so CMS codes such as 8001, 8028, 10040 or 50116 arrive
+  truncated (8001 → 65, 8028 → 92). This is also true of `execute_stepchain.sh`. The real code is in the step's
   stderr log and job report; the reporting step should take it from there.
 - **Random seeds:** neither the splitter nor this workflow re-seeds `RandomNumberGeneratorService`
-  per job (WMCore does). Needs checking before running more than one job.
+  per job (WMCore does). Needs fixing before running more than one job.
 - **Stage-out and reporting:** wrap `ep_scripts/stage_out.py` and `create_report.py` as tools after `cmsRun6`.
+- **Pileup** is the list baked into the step 2 PSet; a per-job `pileupconf.json` (`src/python/pileup_generator/`) would replace it.
 - **NumCopies > 1** for step 1 is not supported yet (`make_job_inputs.py` refuses it); in CWL it would be a scatter over the copies.
 - The top-level workflow is written for this 6-step request (which steps are kept). Generating it from
   `request.json` is the step after that.
